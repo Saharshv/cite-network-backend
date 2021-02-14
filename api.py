@@ -20,15 +20,18 @@ def factCheck():
     article.parse()
     articleTitle = article.title
     articleContent = article.text
-    factCheckApiKey = 'YOUR_API_KEY'
+    metaResponse = requests.get('https://api.urlmeta.org/?url='+newsUrl, headers={'Authorization': 'Basic dGhlc2FoYXJzaEBnbWFpbC5jb206a2FudmlYc3JIZFhhUk9SZk10RUQ='})
+    metaJson = json.loads(metaResponse.content.decode('utf-8'))
+    factCheckApiKey = 'AIzaSyCrV1SGkvPGgIKwV6xG_A4z0xZRZ7YgFBg'
     factCheckResponse = requests.get("https://factchecktools.googleapis.com/v1alpha1/claims:search", params={"query": articleTitle, "key": factCheckApiKey})
     if factCheckResponse.content == b'{}\n':
         fakeboxResponse = requests.post("http://localhost:8080/fakebox/check", json={'url': newsUrl, 'content': articleContent, 'title': articleTitle})
         fakeboxJson = json.loads(fakeboxResponse.content.decode('utf-8'))
-        apiResponse = {"articleTitle": articleTitle, "articleBias": fakeboxJson.get('content').get('decision'), "articleCategory": fakeboxJson.get('domain').get('category')}
+        apiResponse = {"meta": metaJson, "articleTitle": articleTitle, "articleBias": fakeboxJson.get('content').get('decision'), "articleCategory": fakeboxJson.get('domain').get('category'), "articleContent": articleContent}
         return apiResponse
     factCheckJson = json.loads(factCheckResponse.content.decode('utf-8'))
-    return factCheckJson
+    apiResponse = {"claim": factCheckJson.get('claims')[0], "meta": metaJson, "articleTitle": articleTitle, "articleContent": articleContent}
+    return apiResponse
 
 @app.route('/checkbook-invoice', methods=['POST'])
 def createInvoice():
